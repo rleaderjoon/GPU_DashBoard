@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<gpuz_dump>
+  <version>2.57.0</version>
+  <card>
+    <location>0:2:2</location>
+    <cardname>Intel(R) Iris(R) Xe Graphics</cardname>
+    <vendor>Intel</vendor>
+    <vendorid>8086</vendorid>
+    <gpuname>Alder Lake</gpuname>
+    <diesize>0</diesize>
+    <transistors>0</transistors>
+    <processsize>10</processsize>
+    <releasedate>Jan 4, 2022</releasedate>
+    <deviceid>46A6</deviceid>
+    <subsysid>C1AC</subsysid>
+    <subvendor>Samsung</subvendor>
+    <subvendorid>144D</subvendorid>
+    <gpurevision></gpurevision>
+    <biosversion></biosversion>
+    <biosuefi>1</biosuefi>
+    <businterface>N/A</businterface>
+    <directxsupport>12 (12_1)</directxsupport>
+    <memtype>LPDDR5</memtype>
+    <memvendor></memvendor>
+    <membuswidth>256</membuswidth>
+    <memsize>0</memsize>
+    <numrops>8</numrops>
+    <numtmus>16</numtmus>
+    <numshadersvertex></numshadersvertex>
+    <numshaderspixel></numshaderspixel>
+    <numshadersunified>96</numshadersunified>
+    <driverversion>31.0.101.3616 DCH / Win11 64</driverversion>
+    <whql>WHQL</whql>
+    <driverdate>Sep 02, 2022</driverdate>
+    <fillratepixel>11.2</fillratepixel>
+    <fillratetexel>22.4</fillratetexel>
+    <membandwidth>332.0</membandwidth>
+    <clockgpu>299</clockgpu>
+    <clockmem>2594</clockmem>
+    <clockshader></clockshader>
+    <clockgpudefault>300</clockgpudefault>
+    <clockmemdefault>2600</clockmemdefault>
+    <clockshaderdefault></clockshaderdefault>
+    <clockgpuboost>1397</clockgpuboost>
+    <clockgpuboostdefault>1400</clockgpuboostdefault>
+    <multigpuname>Multi-GPU</multigpuname>
+    <multigpu0>Disabled</multigpu0>
+    <cuda>0</cuda>
+    <opencl>1</opencl>
+    <dxcompute>1</dxcompute>
+    <physx>0</physx>
+    <dxr>0</dxr>
+    <directml>1</directml>
+    <opengl>1</opengl>
+    <resizablebar>Disabled</resizablebar>
+  </card>
+</gpuz_dump>
