@@ -7,11 +7,12 @@ log_file = 'GPU-Z Sensor Log.txt'
 csv_file = 'gpu_data.csv'
 count = 0
 
+# 텍스트 파일의 내용을 초기화하는 함수
 def clear_text_file(filename):
-    """텍스트 파일의 내용을 지웁니다."""
     with open(filename, 'w') as file:
-        file.write("GPU Clock [MHz], Memory Clock [MHz], GPU Temperature [C], GPU Load [%]\n")
+        file.write("        Date        , GPU Clock [MHz] , Memory Clock [MHz] , GPU Temperature [캜] , GPU Load [%] , Memory Used (Dedicated) [MB] , GPU Power [W] , GPU Voltage [V] , CPU Temperature [캜] , System Memory Used [MB] ,")
 
+# 파일의 마지막 줄 만을 읽고 반환하는 함수
 def read_last_line():
     with open(log_file, 'r') as file:
         lines = file.readlines()
@@ -22,7 +23,8 @@ def read_last_line():
             print("파일이 비어있습니다.")
             time.sleep(2)
             return read_last_line()
-        
+    
+# txt와 csv를 초기화 하는 함수
 def clear_file():
     with open(log_file, "w") as file:
         pass
@@ -32,11 +34,12 @@ def clear_file():
     
 def init_csv(filename):
     global count
-    header = ['GPU Clock [MHz]', 'Memory Clock [MHz]', 'GPU Temperature [C]', 'GPU Load [%]']
+
+    #열 제목을 나타낼 리스트
+    header = ['Count','Date', 'GPU Clock [MHz]', 'Memory Clock [MHz]', 'GPU Temperature [C]', 'GPU Load [%]', 'GPU Power [W]']
     dummy_data = []
-    for i in range(61):
-        dummy_data.append([0.0,0.0,0.0,0.0])
-    dummy_data.append([count, count, count, count])
+    for i in range(60):
+        dummy_data.append([0,"2024-01-01 00:00:00",0.0,0.0,0.0,0.0,0.0])
     df = pd.DataFrame(dummy_data, columns = header)
     df.to_csv(filename, index = False)
 
@@ -62,24 +65,19 @@ def main():
     while True:
         last_line = read_last_line()
         if "GPU Clock [MHz]" not in last_line:
-            data = last_line.split(',')[1:5] 
-            for i in range(3):
+            data = last_line.split(',')[0:7] 
+            for i in range(0,7):
                 data[i] = data[i].strip()
-
-            data = [float(x) for x in data]
-
-            to_csv = {"GPU Clock [MHz]":data[0], "Memory Clock [MHz]" : data[1], "GPU Temperature [C]" : data[2], "GPU Load [%]" : data[3]}
-            checkTime = {"GPU Clock [MHz]":count, "Memory Clock [MHz]" : count, "GPU Temperature [C]" : count, "GPU Load [%]" : count}
+            for index in range(1,7):
+                data[index] = float(data[index])
+            to_csv = {"Count":count, "Date" : data[0], "GPU Clock [MHz]":data[1], "Memory Clock [MHz]" : data[2], "GPU Temperature [C]" : data[3], "GPU Load [%]" : data[4], "GPU Power [W]" : data[6]}
             df = pd.read_csv(csv_file)
             df.iloc[count] = to_csv
-            df.iloc[61] = checkTime
-            print(df.iloc[61,0])
             df.to_csv(csv_file, index=False)
             print(f"Appended {count} row(s) to {csv_file}")
             count += 1
 
-
-            if count > 60:
+            if count > 59:
                 count = 0
                 with open(log_file, "w") as file:
                     file.write("        Date        , GPU Clock [MHz] , Memory Clock [MHz] , GPU Temperature [캜] , GPU Load [%] , Memory Used (Dedicated) [MB] , GPU Power [W] , GPU Voltage [V] , CPU Temperature [캜] , System Memory Used [MB] ,")
