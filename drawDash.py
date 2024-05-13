@@ -3,13 +3,14 @@ import firebase_admin
 from firebase_admin import credentials
 from firebase_admin import firestore
 import dash
-from dash import dcc, html,Input, Output
+from dash import dcc, html,Input, Output, State
 import plotly.express as px
 import pandas as pd
 import dash_daq as daq
 import dash_mantine_components as dmc
 import plotly.graph_objs as go
 from apscheduler.schedulers.background import BackgroundScheduler
+import json
 
 cred = credentials.Certificate('gpu-dashboard-d0c06-firebase-adminsdk-iv3bm-f0e5f41465.json')
 firebase_admin.initialize_app(cred)
@@ -28,6 +29,7 @@ app = dash.Dash(
 params = list(df)
 max_length = 60
 time = 0
+avg_freq = 0
 
 def load_data():
     global data
@@ -60,25 +62,29 @@ scheduler.start()
 
 def build_banner():
     return html.Div(
-        id = "banner",
-        className = "banner",
-        children = [
+        id="banner",
+        className="banner",
+        style = {'backgroundColor' : 'black'},
+        children=[
             html.Div(
-                id = "banner-text",
-                children = [
+                id="banner-text",
+                children=[
                     html.H1("GPU DashBoard"),
                     html.H2("Control and optimization GPU")
                 ]
             ),
             html.Div(
-                id = "banner-logo",
-                children = [
+                id="banner-logo",
+                children=[
                     html.A(
-                        html.Button(children = "GITHUB"),
+                        className="github-button",
                         href="https://github.com/rleaderjoon/GPU_DashBoard",
+                        children=[
+                            html.Button(children="GITHUB",style = {'backgroundColor' : 'white', 'color' : 'black'}),
+                        ],
                     ),
                     html.Button(
-                        id = "read-about-project", children = "read-about-project"
+                        id="read-about-project", children="read-about-project", style = {'backgroundColor' : 'white', 'color' : 'black'}
                     ),
                 ],
             ),
@@ -89,18 +95,26 @@ def build_tabs():
     return html.Div(
         children=[
             dcc.Tabs(
+                id = 'tab-value',
+                value = 'tab-1',
                 children=[
                     dcc.Tab(
-                        label="Specification Settings",
-                        selected_style = {"color" : "black", 'borderTop': '10px solid #000000',},
+                        label="OverView",
+                        style = {'backgroundColor' : 'black'},
+                        selected_style = {"color" : "black", 'borderTop': '10px solid #808080','backgroundColor' : 'white'},
+                        value = 'tab-1',
                     ),
                     dcc.Tab(
-                        label="Control Charts Dashboard",
-                        selected_style = {"color" : "black", 'borderTop': '10px solid #000000',},
+                        label="Control Setting",
+                        style = {'backgroundColor' : 'black'},
+                        selected_style = {"color" : "black", 'borderTop': '10px solid #808080','backgroundColor' : 'white'},
+                        value = 'tab-2',
                     ),
                     dcc.Tab(
                         label="Show Exp",
-                        selected_style = {"color" : "black", 'borderTop': '10px solid #000000',},
+                        style = {'backgroundColor' : 'black'},
+                        selected_style = {"color" : "black", 'borderTop': '10px solid #808080','backgroundColor' : 'white'},
+                        value = 'tab-3',
                     ),
                 ],
             )
@@ -121,8 +135,8 @@ def build_side_panel():
                     daq.LEDDisplay(
                         id = "operator-led",
                         value = "1704",
-                        color = "#92e0d3",
-                        backgroundColor = "#1e2130",
+                        color = "#ffffff",
+                        backgroundColor = "#000000",
                         size = 50,
                     ),
                 ],
@@ -159,16 +173,16 @@ app.layout = html.Div(
             children = build_banner(),
         ),
         html.Div(
-            style = {"flex" : 1, "background-color" : "lightblue"},
+            style = {"flex" : 1, "background-color" : "black"},
         ),
         html.Div(
-            style = {"flex" : 4, "background-color" : "lightgreen"},
+            style = {"flex" : 4, "background-color" : "black"},
             children = [
                 html.Div(
                     style = {"display" : "flex", "flex-direction" : "row", "height" : "80vh"},
                     children = [
                         html.Div(
-                            style = {"flex" : 1, "background-color" : "red"},
+                            style = {"flex" : 1, "background-color" : "black"},
                             children = [
                                 html.Div(
                                     style = {"display" : "flex", "justify-content" : "center", "align-items" : "center"},
@@ -179,13 +193,13 @@ app.layout = html.Div(
                             ]
                         ),
                         html.Div(
-                            style = {"flex" : 4, "background-color" : "blue"},
+                            style = {"flex" : 4, "background-color" : "black"},
                             children = [
                                 html.Div(
                                     style = {"display" : "flex", "flex-direction" : "column", "height" : "80vh"},
                                     children = [
                                         html.Div(
-                                            style = {"background-color" : "orange"},
+                                            style = {"background-color" : "black"},
                                             children = [
                                                 html.Div(
                                                     style={"justify-content" : "center"},
@@ -193,9 +207,10 @@ app.layout = html.Div(
                                                 )
                                             ]
                                         ),
+                                        # 이 부분을 콜백으로 해결해야 함
                                         html.Div(
-                                            style = {"flex" : 1, "background-color" : "yellow"},
-                                        ),
+                                            id = 'tabs-contents'
+                                        )
                                     ]
                                 )
                             ]
@@ -222,17 +237,17 @@ def update_gauge(n):
 def update_graph(feature):
     # feature에 따라 그래프를 그리기 위해 해당 열의 데이터를 선택
     y_data = df[feature]
-    title = feature.replace('_', ' ').title() + ' Over Time'  # 그래프 제목 설정
+    title = feature.replace('_', ' ').title()
 
     # 그래프 생성
     figure = {
-        'data': [{'x': df['Date'], 'y': y_data, 'mode': 'lines', 'line': {'color': 'yellow'}, 'type': 'scatter'}],
-        'layout': {
-            'title': title,
-            'xaxis': {'showticklabels': False},  # X축 눈금 표시하지 않음
-            'yaxis': {'showticklabels': False},  # Y축 눈금 표시하지 않음
-            'margin': {'l': 0, 'r': 0, 't': 30, 'b': 0},  # 여백 조정
-            'height': "8rem"  # 그래프 높이 조정
+        'data': [{'x': df['Date'], 'y': y_data, 'mode': 'lines', 'line': {'color': 'white'}, 'type': 'scatter'}],
+        'layout' : {
+            'xaxis' : {'showticklabels' : False},
+            'plot_bgcolor': 'black',  # 그래프 영역 배경색 설정
+            'paper_bgcolor': 'black',  # 그래프 바깥 영역(페이퍼) 배경색 설정
+            'title' : title,
+            'title_font': {'color': 'white'}  # 제목 글자 색상 설정
         }
     }
     return figure
@@ -262,7 +277,177 @@ def update_gpu_load_graph(n):
 def update_gpu_power_graph(n):
     return update_graph('GPU Power [W]')
 
+"""
+# gpu-clock-gauge 콜백 함수
+@app.callback(
+        [Output('gpu-clock-gauge', 'min'),
+         Output('gpu-clock-gauge', 'max'),
+         Output('gpu-clock-gauge', 'value')],
+        [Input("gpu-clock", 'min'),
+         Input("gpu-clock", 'max'),
+         Input("gpu-clock", 'value')]
+)
+def render_gpu_clock_gauge(min, max, value):
+    html.Div([
+        daq.Gauge(
+            id = 'gpu-clock-gauge',
+            label = 'gpu-clock-gauge',
+            value = value,
+            max = max,
+            min = min,
+            showCurrentValue = True,
+        )
+    ])
 
+# memory-clock-gauge 콜백 함수
+@app.callback(
+        [Output('memory-clock-gauge', 'min'),
+         Output('memory-clock-gauge', 'max'),
+         Output('memory-clock-gauge', 'value')],
+        [Input("memory-clock", 'min'),
+         Input("memory-clock", 'max'),
+         Input("memory-clock", 'value')]
+)
+def render_memory_clock_gauge(min, max, value):
+    html.Div([
+        daq.Gauge(
+            id = 'memory-clock-gauge',
+            label = 'memory-clock-gauge',
+            value = value,
+            max = max,
+            min = min,
+            showCurrentValue = True,
+        )
+    ])
+
+@app.callback(
+        [Output('power-limit-gauge', 'min'),
+         Output('power-limit-gauge', 'max'),
+         Output('power-limit-gauge', 'value')],
+        [Input("power-limit", 'min'),
+         Input("power-limit", 'max'),
+         Input("power-limit", 'value')]
+)
+def render_power_limit_gauge(min, max, value):
+    html.Div([
+        daq.Gauge(
+            id = 'power-limit-gauge',
+            label = 'power-limit-gauge',
+            value = value,
+            max = max,
+            min = min,
+            showCurrentValue = True,
+        )
+    ])  
+"""
+# dcc.Tab 콜백 함수
+# Tab을 눌렀을 때 렌더되는 창은 아래의 함수로 구현
+@app.callback(Output('tabs-contents', 'children'),
+              Input('tab-value', 'value'))
+def render_content(tab):
+    if tab == 'tab-1':
+        return  html.Div(
+                style = {"flex" : 1, "background-color" : "black", "overflow" : "auto"},
+                children = [
+                    dcc.Graph(
+                        id='gpu-clock-graph',
+                        style = {'height' : '300px'}
+                        ),
+                    dcc.Graph(
+                        id='memory-clock-graph',
+                        style = {'height' : '300px'}
+                        ),
+                    dcc.Graph(
+                        id='gpu-temperature-graph',
+                        style = {'height' : '300px'}
+                        ),
+                    dcc.Graph(
+                        id='gpu-load-graph',
+                        style = {'height' : '300px'}
+                        ),
+                    dcc.Graph(
+                        id='gpu-power-graph',
+                        style = {'height' : '300px'}
+                        )
+                ]
+            )
+    elif tab == 'tab-2':
+        return html.Div(
+            # 화면을 3등분 하기 위해서 제일 위의 Div Style에 "display" : "flex"
+            # 이후 각각의 children의 children의 style에 "flex" : 1을 넣어주면 3개를 사용하면 3등분
+                style = {"display" : "flex" , "flex-direction" : "row", "height" : "100vh"},
+                children = [
+                    html.Div(
+                        style={"flex": 1, "padding": "10px"},
+                        children=[
+                            daq.Gauge(
+                                id = 'memory-clock-gauge',
+                                label = 'memory-clock-gauge',
+                                value = 3000,
+                                max = 7000,
+                                min = 3000,
+                                showCurrentValue = True,
+                            ),
+                            html.H3("GPU Clock"),
+                            dcc.Slider(
+                                id='gpu-clock',  # 다이얼의 고유 식별자
+                                min=200,
+                                max=2000,
+                                step=200,
+                                value=200,  # 초기 값
+                                marks={i: str(i) for i in range(200, 2000, 200)}  # 슬라이더 눈금 설정
+                            ),
+                            html.Div(id = 'gpu-clock-output'),
+                ]),
+                    html.Div(
+                        style={"flex": 1, "padding": "10px"},
+                        children=[
+                            daq.Gauge(
+                                id = 'memory-clock-gauge',
+                                label = 'memory-clock-gauge',
+                                value = 3000,
+                                max = 7000,
+                                min = 3000,
+                                showCurrentValue = True,
+                            ),
+                        html.H3("Memory Clock"),
+                            dcc.Slider(
+                                id='memory-clock',  # 다이얼의 고유 식별자
+                                min=3000,
+                                max=7000,
+                                step=800,
+                                value=3000,  # 초기 값
+                                marks={i: str(i) for i in range(3000, 7000, 800)}  # 슬라이더 눈금 설정
+                            ),
+                            html.Div(id='memory-clock-output'),
+                ]),
+                    html.Div(
+                        style={"flex": 1, "padding": "10px"},
+                        children=[
+                        html.H3("Power Limit"),
+                            dcc.Slider(
+                                id='power-limit',  # 다이얼의 고유 식별자
+                                min=-20,
+                                max=20,
+                                step=10,
+                                value=0,  # 초기 값
+                                marks={i: str(i) for i in range(-20, 20, 10)}  # 슬라이더 눈금 설정
+                            ),
+                            html.Div(id='power-limit-output')  # 슬라이더 값 표시를 위한 빈 Div
+                ])
+                ]
+            )   
+    elif tab == 'tab-3':
+        return html.Div([
+            html.H3("h3")
+        ])
+    
+@app.callback(
+    dash.dependencies.Output('gpu-clock-output', 'children'),
+    [dash.dependencies.Input('gpu-clock','value')]
+)
+def update_gpu_clock_output(value):
+    return f'{value}'
 
 # 애플리케이션 실행
 if __name__ == '__main__':
