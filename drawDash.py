@@ -52,6 +52,7 @@ def load_data():
     # 정렬된 DataFrame을 CSV 파일로 저장
     df_sorted.to_csv("sorted_firebase_data.csv", index=False)
     df = pd.read_csv("sorted_firebase_data.csv")
+    print(df)
 
 
 #1분마다 함수 실행
@@ -59,6 +60,10 @@ scheduler.add_job(load_data, 'interval', minutes=1)
 
 # 스케줄러 시작
 scheduler.start()
+
+def cal_avg_freq():
+    global df
+    print(df)
 
 def build_banner():
     return html.Div(
@@ -277,69 +282,29 @@ def update_gpu_load_graph(n):
 def update_gpu_power_graph(n):
     return update_graph('GPU Power [W]')
 
-"""
+
 # gpu-clock-gauge 콜백 함수
 @app.callback(
-        [Output('gpu-clock-gauge', 'min'),
-         Output('gpu-clock-gauge', 'max'),
-         Output('gpu-clock-gauge', 'value')],
-        [Input("gpu-clock", 'min'),
-         Input("gpu-clock", 'max'),
-         Input("gpu-clock", 'value')]
+    Output('gpu-clock-gauge', 'value'),
+    [Input("gpu-clock", 'value')]
 )
-def render_gpu_clock_gauge(min, max, value):
-    html.Div([
-        daq.Gauge(
-            id = 'gpu-clock-gauge',
-            label = 'gpu-clock-gauge',
-            value = value,
-            max = max,
-            min = min,
-            showCurrentValue = True,
-        )
-    ])
+def update_gpu_clock_gauge(value):
+    return value
 
 # memory-clock-gauge 콜백 함수
 @app.callback(
-        [Output('memory-clock-gauge', 'min'),
-         Output('memory-clock-gauge', 'max'),
-         Output('memory-clock-gauge', 'value')],
-        [Input("memory-clock", 'min'),
-         Input("memory-clock", 'max'),
-         Input("memory-clock", 'value')]
+    Output('memory-clock-gauge', 'value'),
+    [Input("memory-clock", 'value')]
 )
-def render_memory_clock_gauge(min, max, value):
-    html.Div([
-        daq.Gauge(
-            id = 'memory-clock-gauge',
-            label = 'memory-clock-gauge',
-            value = value,
-            max = max,
-            min = min,
-            showCurrentValue = True,
-        )
-    ])
-
+def update_memory_clock_gauge(value):
+    return value
 @app.callback(
-        [Output('power-limit-gauge', 'min'),
-         Output('power-limit-gauge', 'max'),
-         Output('power-limit-gauge', 'value')],
-        [Input("power-limit", 'min'),
-         Input("power-limit", 'max'),
-         Input("power-limit", 'value')]
+    Output('power-limit-gauge', 'value'),
+    [Input("power-limit", 'value')]
 )
-def render_power_limit_gauge(min, max, value):
-    html.Div([
-        daq.Gauge(
-            id = 'power-limit-gauge',
-            label = 'power-limit-gauge',
-            value = value,
-            max = max,
-            min = min,
-            showCurrentValue = True,
-        )
-    ])  
-"""
+def update_power_limit_gauge(value):
+    return value
+
 # dcc.Tab 콜백 함수
 # Tab을 눌렀을 때 렌더되는 창은 아래의 함수로 구현
 @app.callback(Output('tabs-contents', 'children'),
@@ -381,11 +346,11 @@ def render_content(tab):
                         style={"flex": 1, "padding": "10px"},
                         children=[
                             daq.Gauge(
-                                id = 'memory-clock-gauge',
-                                label = 'memory-clock-gauge',
-                                value = 3000,
-                                max = 7000,
-                                min = 3000,
+                                id = 'gpu-clock-gauge',
+                                label = 'gpu-clock-gauge',
+                                value = 1800,
+                                max = 2000,
+                                min = 200,
                                 showCurrentValue = True,
                             ),
                             html.H3("GPU Clock"),
@@ -394,7 +359,7 @@ def render_content(tab):
                                 min=200,
                                 max=2000,
                                 step=200,
-                                value=200,  # 초기 값
+                                value=1800,  # 초기 값
                                 marks={i: str(i) for i in range(200, 2000, 200)}  # 슬라이더 눈금 설정
                             ),
                             html.Div(id = 'gpu-clock-output'),
@@ -405,8 +370,8 @@ def render_content(tab):
                             daq.Gauge(
                                 id = 'memory-clock-gauge',
                                 label = 'memory-clock-gauge',
-                                value = 3000,
-                                max = 7000,
+                                value = 7000,
+                                max = 7800,
                                 min = 3000,
                                 showCurrentValue = True,
                             ),
@@ -414,16 +379,24 @@ def render_content(tab):
                             dcc.Slider(
                                 id='memory-clock',  # 다이얼의 고유 식별자
                                 min=3000,
-                                max=7000,
+                                max=7800,
                                 step=800,
-                                value=3000,  # 초기 값
-                                marks={i: str(i) for i in range(3000, 7000, 800)}  # 슬라이더 눈금 설정
+                                value=7000,  # 초기 값
+                                marks={i: str(i) for i in range(3000, 7800, 800)}  # 슬라이더 눈금 설정
                             ),
                             html.Div(id='memory-clock-output'),
                 ]),
                     html.Div(
                         style={"flex": 1, "padding": "10px"},
                         children=[
+                            daq.Gauge(
+                                id = 'power-limit-gauge',
+                                label = 'power-limit-gauge',
+                                value = 0,
+                                max = 20,
+                                min = -20,
+                                showCurrentValue = True,
+                            ),
                         html.H3("Power Limit"),
                             dcc.Slider(
                                 id='power-limit',  # 다이얼의 고유 식별자
