@@ -63,7 +63,8 @@ scheduler.start()
 
 def cal_avg_freq():
     global df
-    print(df)
+    average_gpu_clock = df['GPU Clock [MHz]'].mean()
+    return int(average_gpu_clock)
 
 def build_banner():
     return html.Div(
@@ -85,16 +86,84 @@ def build_banner():
                         className="github-button",
                         href="https://github.com/rleaderjoon/GPU_DashBoard",
                         children=[
-                            html.Button(children="GITHUB",style = {'backgroundColor' : 'white', 'color' : 'black'}),
+                            html.Button(children="GITHUB",style = {'backgroundColor' : 'black', 'color' : 'white', 'border' : '2px solid white', 'margin-right' : '5px', 'margin-left' : '20px'}),
                         ],
                     ),
                     html.Button(
-                        id="read-about-project", children="read-about-project", style = {'backgroundColor' : 'white', 'color' : 'black'}
+                        id="read-about-project", children="read-about", style = {'backgroundColor' : 'black', 'color' : 'white', 'border' : '2px solid white'}, n_clicks=0
                     ),
                 ],
             ),
         ],
     )
+
+def generate_modal():
+    return html.Div(
+        id="markdown",
+        className="modal",
+        style={"display": "none"},  # 모달 초기 상태를 숨김으로 설정
+        children=(
+            html.Div(
+                id="markdown-container",
+                className="markdown-container",
+                children=[
+                    html.Div(
+                        className="close-container",
+                        children=html.Button(
+                            "Close",
+                            id="markdown_close",
+                            n_clicks=0,
+                            className="closeButton",
+                        ),
+                    ),
+                    html.Div(
+                        className="markdown-text",
+                        children=dcc.Markdown(
+                            children=(
+                                """
+                        ###### What is this mock app about?
+
+                        This is a dashboard for monitoring real-time process quality along manufacture production line.
+
+                        ###### What does this app shows
+
+                        Click on buttons in `Parameter` column to visualize details of measurement trendlines on the bottom panel.
+
+                        The sparkline on top panel and control chart on bottom panel show Shewhart process monitor using mock data.
+                        The trend is updated every other second to simulate real-time measurements. Data falling outside of six-sigma control limit are signals indicating 'Out of Control(OOC)', and will
+                        trigger alerts instantly for a detailed checkup.
+                        
+                        Operators may stop measurement by clicking on `Stop` button, and edit specification parameters by clicking specification tab.
+
+                        ###### Source Code
+
+                        You can find the source code of this app on our [Github repository](https://github.com/plotly/dash-sample-apps/tree/main/apps/dash-manufacture-spc-dashboard).
+
+                    """
+                            )
+                        ),
+                    ),
+                ],
+            )
+        ),
+    )
+
+# 콜백 설정
+@app.callback(
+    Output("markdown", "style"),
+    [Input("read-about-project", "n_clicks"), Input("markdown_close", "n_clicks")]
+)
+def update_click_output(button_click, close_click):
+    ctx = dash.callback_context
+
+    if ctx.triggered:
+        prop_id = ctx.triggered[0]["prop_id"].split(".")[0]
+        if prop_id == "read-about-project" and button_click > 0:
+            return {"display": "block"}
+        elif prop_id == "markdown_close" and close_click > 0:
+            return {"display": "none"}
+
+    return {"display": "none"}
 
 def build_tabs():
     return html.Div(
@@ -139,7 +208,7 @@ def build_side_panel():
                     html.H2("AVG Freq"),
                     daq.LEDDisplay(
                         id = "operator-led",
-                        value = "1704",
+                        value = cal_avg_freq(),
                         color = "#ffffff",
                         backgroundColor = "#000000",
                         size = 50,
@@ -168,7 +237,8 @@ app = dash.Dash("GPU DASHBOARD")
 app.layout = html.Div(
     style = {"display" : "flex", "flex-direction" : "column", "height" : "100vh"},
     children = [
-         dcc.Interval(
+        generate_modal(),
+        dcc.Interval(
             id='interval-component',
             interval=1*1000,  # 1초마다 콜백 함수 호출
             n_intervals=0
@@ -214,7 +284,8 @@ app.layout = html.Div(
                                         ),
                                         # 이 부분을 콜백으로 해결해야 함
                                         html.Div(
-                                            id = 'tabs-contents'
+                                            id = 'tabs-contents',
+                                            style = {"overflow" : "auto"}
                                         )
                                     ]
                                 )
